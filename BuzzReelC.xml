@@ -2,15 +2,67 @@
 <!DOCTYPE html>
 <html class='br-age-preboot' b:css='false' b:defaultwidgetversion='2' b:layoutsVersion='3' b:responsive='true' b:templateUrl='indie.xml' b:templateVersion='1.3.3' expr:dir='data:blog.languageDirection' expr:lang='data:blog.locale' xmlns='http://www.w3.org/1999/xhtml' xmlns:b='http://www.google.com/2005/gml/b' xmlns:data='http://www.google.com/2005/gml/data' xmlns:expr='http://www.google.com/2005/gml/expr'>
   <head>
-    <!-- BuzzReelC v12.0.2: inline first-paint shield + accepted DOM scrub.
-         Blogger compiles the large b:skin block; this small rule is intentionally
-         placed before it so the gate cannot paint in the wrong state. -->
+    <!-- BuzzReelC v12.1.0: pre-paint age approval check.
+         Approval is stored locally for 30 days; URL fragment remains a no-storage fallback. -->
+    <script id='br-age-consent-precheck' type='text/javascript'><![CDATA[
+      (function(window, document){
+        'use strict';
+        var KEY = 'brAgeApprovedAtV1';
+        var TTL_MS = 2592000000;
+        var HASH = '#br-age-pass';
+        var root = document.documentElement;
+
+        function report(message, error){
+          if(window.console && window.console.warn){ window.console.warn(message, error || ''); }
+        }
+        function addClass(name){
+          if(root && (' ' + String(root.className || '') + ' ').indexOf(' ' + name + ' ') === -1){
+            root.className = String(root.className || '') + ' ' + name;
+          }
+        }
+        function removeStoredValue(storage){
+          try{ if(storage){ storage.removeItem(KEY); } }catch(error){ report('Unable to clear expired age approval.', error); }
+        }
+        function validApprovalTime(value){
+          var now = new Date().getTime();
+          return value > 0 && value <= now && (now - value) <= TTL_MS;
+        }
+        function storageAccepted(){
+          var storage;
+          var raw;
+          var value;
+          try{ storage = window.localStorage || null; }
+          catch(error){ report('Age approval storage is unavailable; falling back to URL fragment.', error); return false; }
+          if(!storage){ return false; }
+          try{ raw = storage.getItem(KEY); }
+          catch(error){ report('Unable to read age approval storage; falling back to URL fragment.', error); return false; }
+          value = parseInt(raw || '0', 10) || 0;
+          if(validApprovalTime(value)){ return true; }
+          if(raw){ removeStoredValue(storage); }
+          return false;
+        }
+        function persistHashApproval(){
+          var storage;
+          if(String(window.location.hash || '').toLowerCase() !== HASH){ return; }
+          try{ storage = window.localStorage || null; }
+          catch(error){ report('Age approval storage is unavailable; fragment approval cannot be persisted.', error); return; }
+          try{ if(storage){ storage.setItem(KEY, String(new Date().getTime())); } }
+          catch(error){ report('Unable to persist fragment age approval.', error); }
+        }
+
+        if(storageAccepted() || String(window.location.hash || '').toLowerCase() === HASH){
+          persistHashApproval();
+          addClass('br-age-accepted');
+        }
+      })(window, document);
+    ]]></script>
     <style id='br-age-critical' type='text/css'><![CDATA[
       html.br-age-preboot{background:#030304!important}
       html.br-age-preboot body{visibility:hidden!important}
-      #br-age-gate[hidden]{display:none!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;transition:none!important}
-      #br-age-pass + #br-age-gate[hidden]{display:flex!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important}
-      #br-age-pass:target + #br-age-gate[hidden]{display:none!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;transition:none!important}
+      #br-age-gate,#br-age-gate[hidden],html.br-age-accepted #br-age-gate{display:none!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;transition:none!important}
+      html.br-age-required #br-age-gate{display:flex!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important}
+      html.br-age-required #br-age-gate[hidden]{display:flex!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important}
+      #br-age-pass:target + #br-age-gate,html.br-age-accepted #br-age-pass + #br-age-gate{display:none!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;transition:none!important}
     ]]></style>
     <noscript><style type='text/css'>html.br-age-preboot body,body[style]{visibility:visible!important}</style></noscript>
 <meta content='width=device-width, initial-scale=1' name='viewport'/>
@@ -3849,11 +3901,11 @@ body.item-view .return_link:focus-visible,
    After acceptance no later event is permitted to downgrade the document.
    ================================================================ */
 .br-age-gate{position:fixed!important;inset:0!important;z-index:2147483646!important;display:none!important;align-items:center!important;justify-content:center!important;padding:20px!important;background:radial-gradient(circle at 18% 12%,rgba(255,72,72,.16),transparent 34%),radial-gradient(circle at 82% 88%,rgba(108,92,231,.14),transparent 38%),rgba(3,3,4,.94)!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;overscroll-behavior:contain!important;transition:opacity .08s linear,visibility .08s linear!important}
-/* v12.0 Blogger-safe state: static adjacent sibling selectors only. */
+/* v12.1 Blogger-safe state: hidden by default; only explicit required state can show it. */
 .br-age-pass-target{position:fixed!important;top:0!important;left:0!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important}
-#br-age-pass + .br-age-gate{display:flex!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important}
-#br-age-pass:target + .br-age-gate{display:none!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;transition:none!important}
-/* The fixed overlay intercepts interaction; no cookie/storage-dependent scroll lock is required. */
+html.br-age-required #br-age-pass + .br-age-gate{display:flex!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important}
+#br-age-pass:target + .br-age-gate,html.br-age-accepted #br-age-pass + .br-age-gate{display:none!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;transition:none!important}
+/* The fixed overlay intercepts interaction; scroll lock is not tied to storage availability. */
 .br-age-gate:before{content:"";position:absolute!important;inset:0!important;pointer-events:none!important;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px)!important;background-size:32px 32px!important;mask-image:linear-gradient(to bottom,rgba(0,0,0,.78),transparent)!important}
 .br-age-card{position:relative!important;width:min(100%,460px)!important;padding:30px 28px 25px!important;overflow:hidden!important;border:1px solid rgba(255,255,255,.12)!important;border-radius:24px!important;background:linear-gradient(145deg,rgba(27,27,30,.97),rgba(12,12,14,.98))!important;box-shadow:0 35px 100px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,255,255,.05)!important;color:#fff!important;text-align:center!important}
 .br-age-badge{width:96px!important;height:96px!important;margin:0 auto 20px!important;display:grid!important;place-items:center!important;border:1px solid rgba(255,96,96,.38)!important;border-radius:50%!important;background:radial-gradient(circle at 36% 28%,#ff6b6b,#d8293f 58%,#8f1025)!important;color:#fff!important;font-size:35px!important;font-weight:900!important;letter-spacing:-.06em!important;box-shadow:0 18px 52px rgba(216,41,63,.28),inset 0 1px 0 rgba(255,255,255,.32)!important}
@@ -4202,9 +4254,8 @@ body.item-view .return_link:focus-visible,
     <b:class cond='data:view.isSearch and !data:view.isLabelSearch' name='search-view'/>
     <b:class name='version-1-3-3'/>
 
-    <!-- BuzzReelC v12.0.2 age gate.
-         Storage-free method: Blogger URL fragments + static critical CSS :target.
-         The fragment is carried by Blogger-generated internal links. -->
+    <!-- BuzzReelC v12.1.0 age gate.
+         Persistent local approval prevents refresh/navigation flashes; URL fragment is fallback. -->
     <span aria-hidden='true' class='br-age-pass-target' id='br-age-pass'></span>
     <div aria-describedby='br-age-description' aria-hidden='false' aria-labelledby='br-age-title' aria-modal='true' class='br-age-gate' hidden='hidden' id='br-age-gate' role='dialog'>
       <div class='br-age-card' role='document'>
@@ -4221,22 +4272,77 @@ body.item-view .return_link:focus-visible,
       (function(window, document){
         'use strict';
         var HASH = '#br-age-pass';
+        var STORAGE_KEY = 'brAgeApprovedAtV1';
+        var TTL_MS = 2592000000;
         var root = document.documentElement;
         var body = document.body;
         var gate = document.getElementById('br-age-gate');
+        var finalStateApplied = false;
 
-        function accepted(){
+        function report(message, error){
+          if(window.console && window.console.warn){ window.console.warn(message, error || ''); }
+        }
+        function hasClass(name){
+          return !!(root && (' ' + String(root.className || '') + ' ').indexOf(' ' + name + ' ') !== -1);
+        }
+        function addClass(name){
+          if(root && !hasClass(name)){ root.className = String(root.className || '') + ' ' + name; }
+        }
+        function removeClass(name){
+          if(root){
+            root.className = String(root.className || '')
+              .replace(new RegExp('(^|\\s)' + name + '(?=\\s|$)', 'g'), ' ')
+              .replace(/^\s+|\s+$/g, '')
+              .replace(/\s{2,}/g, ' ');
+          }
+        }
+        function storage(){
+          try{ return window.localStorage || null; }
+          catch(error){ report('Age approval storage is unavailable; using URL fragment fallback.', error); return null; }
+        }
+        function clearStoredApproval(target){
+          try{ if(target){ target.removeItem(STORAGE_KEY); } }
+          catch(error){ report('Unable to clear age approval storage.', error); }
+        }
+        function validApprovalTime(value){
+          var now = new Date().getTime();
+          return value > 0 && value <= now && (now - value) <= TTL_MS;
+        }
+        function storageAccepted(){
+          var target = storage();
+          var raw;
+          var value;
+          if(!target){ return false; }
+          try{ raw = target.getItem(STORAGE_KEY); }
+          catch(error){ report('Unable to read age approval storage; using URL fragment fallback.', error); return false; }
+          value = parseInt(raw || '0', 10) || 0;
+          if(validApprovalTime(value)){ return true; }
+          if(raw){ clearStoredApproval(target); }
+          return false;
+        }
+        function hashAccepted(){
           return String(window.location.hash || '').toLowerCase() === HASH;
         }
+        function accepted(){
+          return hasClass('br-age-accepted') || storageAccepted() || hashAccepted();
+        }
+        function persistApproval(){
+          var target = storage();
+          if(!target){ return false; }
+          try{ target.setItem(STORAGE_KEY, String(new Date().getTime())); return true; }
+          catch(error){ report('Unable to persist age approval; URL fragment fallback remains active.', error); return false; }
+        }
         function setImportant(node, name, value){
-          if(node && node.style && node.style.setProperty){
-            node.style.setProperty(name, value, 'important');
-          }
+          if(node && node.style && node.style.setProperty){ node.style.setProperty(name, value, 'important'); }
         }
         function clearProperty(node, name){
-          if(node && node.style && node.style.removeProperty){
-            node.style.removeProperty(name);
-          }
+          if(node && node.style && node.style.removeProperty){ node.style.removeProperty(name); }
+        }
+        function setState(name){
+          removeClass('br-age-required');
+          removeClass('br-age-accepted');
+          addClass(name);
+          finalStateApplied = true;
         }
         function hideGate(removeNode){
           if(!gate){ return; }
@@ -4255,6 +4361,7 @@ body.item-view .return_link:focus-visible,
         function showFreshGate(){
           if(!gate){ return; }
           gate.setAttribute('aria-hidden', 'false');
+          gate.removeAttribute('hidden');
           clearProperty(gate, 'display');
           clearProperty(gate, 'opacity');
           clearProperty(gate, 'visibility');
@@ -4262,19 +4369,15 @@ body.item-view .return_link:focus-visible,
           clearProperty(gate, 'transition');
         }
         function revealDocument(){
-          if(root){
-            root.className = String(root.className || '')
-              .replace(/(^|\s)br-age-preboot(?=\s|$)/g, ' ')
-              .replace(/^\s+|\s+$/g, '')
-              .replace(/\s{2,}/g, ' ');
-          }
+          removeClass('br-age-preboot');
           if(body){
             clearProperty(body, 'visibility');
             clearProperty(body, 'opacity');
           }
         }
         function forceLayout(){
-          try{ void document.documentElement.offsetHeight; }catch(ignoreLayout){}
+          try{ void document.documentElement.offsetHeight; }
+          catch(error){ report('Unable to force age-gate layout flush.', error); }
         }
         function writeAcceptedUrl(){
           var clean;
@@ -4285,33 +4388,39 @@ body.item-view .return_link:focus-visible,
             }else{
               window.location.hash = HASH.substring(1);
             }
-          }catch(ignoreHistory){
-            try{ window.location.hash = HASH.substring(1); }catch(ignoreHash){}
+          }catch(error){
+            report('Unable to update age approval URL fragment.', error);
+            try{ window.location.hash = HASH.substring(1); }
+            catch(hashError){ report('Unable to set age approval hash fallback.', hashError); }
           }
         }
         function closestAnchor(node){
           while(node && node !== document){
-            if(node.nodeType === 1 && String(node.tagName || '').toLowerCase() === 'a'){
-              return node;
-            }
+            if(node.nodeType === 1 && String(node.tagName || '').toLowerCase() === 'a'){ return node; }
             node = node.parentNode;
           }
           return null;
+        }
+        function applyAcceptedState(removeNode){
+          setState('br-age-accepted');
+          hideGate(removeNode);
         }
         function acceptNow(event){
           var anchor = closestAnchor(event && event.target);
           if(!anchor || anchor.id !== 'br-age-enter'){ return; }
           if(event && event.preventDefault){ event.preventDefault(); }
-          hideGate(false);
+          persistApproval();
           writeAcceptedUrl();
-          hideGate(true);
+          applyAcceptedState(true);
           forceLayout();
           revealDocument();
         }
         function resolveInitialState(){
           if(accepted()){
-            hideGate(true);
+            if(hashAccepted()){ persistApproval(); }
+            applyAcceptedState(true);
           }else{
+            setState('br-age-required');
             showFreshGate();
           }
           forceLayout();
@@ -4319,22 +4428,31 @@ body.item-view .return_link:focus-visible,
         }
         function scrubAcceptedSnapshot(){
           if(accepted()){
-            hideGate(true);
+            applyAcceptedState(true);
             forceLayout();
           }
         }
 
         document.addEventListener('click', acceptNow, true);
-        resolveInitialState();
+        try{
+          resolveInitialState();
+        }catch(error){
+          report('Age-gate initialization failed; showing the gate as a safe fallback.', error);
+          setState('br-age-required');
+          showFreshGate();
+        }finally{
+          if(!finalStateApplied){ setState('br-age-required'); }
+          revealDocument();
+        }
 
         if(window.addEventListener){
           window.addEventListener('hashchange', function(){
-            if(accepted()){ hideGate(true); }
+            if(accepted()){ applyAcceptedState(true); }
             forceLayout();
             revealDocument();
           }, false);
           window.addEventListener('pageshow', function(){
-            if(accepted()){ hideGate(true); }
+            if(accepted()){ applyAcceptedState(true); }
             forceLayout();
             revealDocument();
           }, false);
