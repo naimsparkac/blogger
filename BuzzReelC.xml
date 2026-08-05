@@ -60,8 +60,8 @@
       html.br-age-preboot{background:#030304!important}
       html.br-age-preboot body{visibility:hidden!important}
       #br-age-gate,#br-age-gate[hidden],html.br-age-accepted #br-age-gate{display:none!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;transition:none!important}
-      html.br-age-required #br-age-gate{display:flex!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important}
-      html.br-age-required #br-age-gate[hidden]{display:flex!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important}
+      html.br-age-required #br-age-gate{display:flex!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important;transition:opacity .08s linear,visibility .08s linear!important}
+      html.br-age-required #br-age-gate[hidden]{display:flex!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important;transition:opacity .08s linear,visibility .08s linear!important}
       #br-age-pass:target + #br-age-gate,html.br-age-accepted #br-age-pass + #br-age-gate{display:none!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;transition:none!important}
     ]]></style>
     <noscript><style type='text/css'>html.br-age-preboot body,body[style]{visibility:visible!important}</style></noscript>
@@ -3900,7 +3900,7 @@ body.item-view .return_link:focus-visible,
    Hidden by default; only the initial br-age-required decision can show it.
    After acceptance no later event is permitted to downgrade the document.
    ================================================================ */
-.br-age-gate{position:fixed!important;inset:0!important;z-index:2147483646!important;display:none!important;align-items:center!important;justify-content:center!important;padding:20px!important;background:radial-gradient(circle at 18% 12%,rgba(255,72,72,.16),transparent 34%),radial-gradient(circle at 82% 88%,rgba(108,92,231,.14),transparent 38%),rgba(3,3,4,.94)!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;overscroll-behavior:contain!important;transition:opacity .08s linear,visibility .08s linear!important}
+.br-age-gate{position:fixed!important;inset:0!important;z-index:2147483646!important;display:none!important;align-items:center!important;justify-content:center!important;padding:20px!important;background:radial-gradient(circle at 18% 12%,rgba(255,72,72,.16),transparent 34%),radial-gradient(circle at 82% 88%,rgba(108,92,231,.14),transparent 38%),rgba(3,3,4,.94)!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;overscroll-behavior:contain!important}
 /* v12.1 Blogger-safe state: hidden by default; only explicit required state can show it. */
 .br-age-pass-target{position:fixed!important;top:0!important;left:0!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important}
 html.br-age-required #br-age-pass + .br-age-gate{display:flex!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important}
@@ -4438,10 +4438,20 @@ html.br-age-required #br-age-pass + .br-age-gate{display:flex!important;opacity:
           resolveInitialState();
         }catch(error){
           report('Age-gate initialization failed; showing the gate as a safe fallback.', error);
-          setState('br-age-required');
-          showFreshGate();
+          if(accepted()) {
+            applyAcceptedState(true);
+          } else {
+            setState('br-age-required');
+            showFreshGate();
+          }
         }finally{
-          if(!finalStateApplied){ setState('br-age-required'); }
+          if(!finalStateApplied){
+            if(accepted()) {
+              applyAcceptedState(true);
+            } else {
+              setState('br-age-required');
+            }
+          }
           revealDocument();
         }
 
